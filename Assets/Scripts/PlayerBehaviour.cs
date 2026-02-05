@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerBehaviour : MonoBehaviour
+public class PlayerBehaviour : NetworkBehaviour
 {
     public CharacterController controller;
 
@@ -27,6 +28,12 @@ public class PlayerBehaviour : MonoBehaviour
 
     // Update is called once per frame
     void Update()
+    {
+        if (!IsOwner) return;
+        Move();
+    }
+
+    void Move()
     {
         isGrounded = Physics.CheckSphere(groundPoint.position, groundRadius, groundMask);
 

@@ -28,7 +28,8 @@ MonoBehaviour:
   TileInjectionRules: []
   Nodes:
   - Graph: {fileID: 11400000}
-    TileSets: []
+    TileSets:
+    - {fileID: 11400000, guid: 7c97dba4c49adc0428809a535f8fcf8a, type: 2}
     NodeType: 1
     Position: 0
     Label: Start
@@ -36,7 +37,8 @@ MonoBehaviour:
     Locks: []
     LockPlacement: 0
   - Graph: {fileID: 11400000}
-    TileSets: []
+    TileSets:
+    - {fileID: 11400000, guid: 7c97dba4c49adc0428809a535f8fcf8a, type: 2}
     NodeType: 2
     Position: 1
     Label: Goal
@@ -45,7 +47,8 @@ MonoBehaviour:
     LockPlacement: 0
   Lines:
   - Graph: {fileID: 11400000}
-    DungeonArchetypes: []
+    DungeonArchetypes:
+    - {fileID: 11400000, guid: 4b098d5af70c3c64ca72a908a5354126, type: 2}
     Position: 0
     Length: 1
     Keys: []
