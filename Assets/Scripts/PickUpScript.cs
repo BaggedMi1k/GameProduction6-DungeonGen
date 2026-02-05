@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PickUpScript : MonoBehaviour
+public class PickUpScript : NetworkBehaviour
 {
     public GameObject player;
     public Transform holdPos;
@@ -22,9 +24,16 @@ public class PickUpScript : MonoBehaviour
     }
     void Update()
     {
+        if (!IsOwner) return;
+        GrabObj();
+        
+    }
+
+    void GrabObj()
+    {
         if (Input.GetKeyDown(KeyCode.E))
         {
-            if (heldObj == null) 
+            if (heldObj == null)
             {
                 //perform raycast to check if player is looking at object within pickuprange
                 RaycastHit hit;
@@ -47,7 +56,7 @@ public class PickUpScript : MonoBehaviour
                 }
             }
         }
-        if (heldObj != null) 
+        if (heldObj != null)
         {
             MoveObject(); //keep object position at holdPos
             RotateObject();
@@ -59,6 +68,7 @@ public class PickUpScript : MonoBehaviour
 
         }
     }
+
     void PickUpObject(GameObject pickUpObj)
     {
         if (pickUpObj.GetComponent<Rigidbody>()) //make sure the object has a RigidBody
