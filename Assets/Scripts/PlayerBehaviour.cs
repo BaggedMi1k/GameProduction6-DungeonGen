@@ -48,7 +48,7 @@ public class PlayerBehaviour : NetworkBehaviour
         Vector3 move = transform.right * x + transform.forward * z;
         controller.Move(move * maxSpeed * Time.deltaTime);
 
-        if (Input.GetButton("Jump") && isGrounded)
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravity);
         }
