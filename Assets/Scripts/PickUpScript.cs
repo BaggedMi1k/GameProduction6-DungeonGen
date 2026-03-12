@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Unity.Netcode;
@@ -8,17 +8,21 @@ public class PickUpScript : NetworkBehaviour
 {
     public GameObject player;
     public Transform holdPos;
+
     public float throwForce = 500f; //force at which the object is thrown at
     public float pickUpRange = 5f; //how far the player can pickup the object from
+
     private float rotationSensitivity = 1f; //how fast/slow the object is rotated in relation to mouse movement
+
     private GameObject heldObj; //object which we pick up
     private Rigidbody heldObjRb; //rigidbody of object we pick up
+
     private bool canDrop = true; //this is needed so we don't throw/drop object when rotating the object
     private int LayerNumber; //layer index
 
     void Start()
     {
-        LayerNumber = LayerMask.NameToLayer("holdLayer"); 
+        LayerNumber = LayerMask.NameToLayer("holdLayer");
 
         //mouseLookScript = player.GetComponent<MouseLookScript>();
     }
@@ -26,7 +30,7 @@ public class PickUpScript : NetworkBehaviour
     {
         if (!IsOwner) return;
         GrabObj();
-        
+
     }
 
     void GrabObj()
@@ -76,7 +80,7 @@ public class PickUpScript : NetworkBehaviour
             heldObj = pickUpObj; //assign heldObj to the object that was hit by the raycast (no longer == null)
             heldObjRb = pickUpObj.GetComponent<Rigidbody>(); //assign Rigidbody
             heldObjRb.isKinematic = true;
-            heldObjRb.transform.parent = holdPos.transform; //parent object to holdposition
+            //heldObjRb.transform.parent = holdPos.transform; //parent object to holdposition
             heldObj.layer = LayerNumber; //change the object layer to the holdLayer
             //make sure object doesnt collide with player, it can cause weird bugs
             Physics.IgnoreCollision(heldObj.GetComponent<Collider>(), player.GetComponent<Collider>(), true);

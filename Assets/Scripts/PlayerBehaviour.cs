@@ -6,6 +6,8 @@ using UnityEngine;
 public class PlayerBehaviour : NetworkBehaviour
 {
     public CharacterController controller;
+    public Camera playerCamera;
+    public Camera pickUpamera;
 
     [Header("Movement Properties")]
     public float maxSpeed = 10.0f;
@@ -24,6 +26,11 @@ public class PlayerBehaviour : NetworkBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
+        if (!IsOwner)
+        {
+            playerCamera.enabled = false;
+            pickUpamera.enabled = false;
+        }
     }
 
     // Update is called once per frame
