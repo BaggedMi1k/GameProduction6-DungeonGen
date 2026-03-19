@@ -13,6 +13,11 @@ public class CameraController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        if (!GetComponentInParent<Unity.Netcode.NetworkBehaviour>().IsOwner)
+        {
+            enabled = false;
+            return;
+        }
     }
 
     // Update is called once per frame

@@ -9,17 +9,19 @@ public class PlayerBehaviour : NetworkBehaviour
     public Camera playerCamera;
     public Camera pickUpamera;
 
-    [Header("Movement Properties")]
-    public float maxSpeed = 10.0f;
+    public float maxSpeed = 2.0f;
     public float gravity = -30.0f;
     public float jumpHeight = 3.0f;
     public Vector3 velocity;
 
-    [Header("Ground Detection Properties")]
     public Transform groundPoint;
     public float groundRadius = 0.5f;
     public LayerMask groundMask;
     public bool isGrounded;
+
+    public CameraController cameraController;
+    public GameObject pauseMenuUI;
+    private bool isPaused = false;
 
 
     // Start is called before the first frame update
@@ -30,14 +32,28 @@ public class PlayerBehaviour : NetworkBehaviour
         {
             playerCamera.enabled = false;
             pickUpamera.enabled = false;
+            return;
         }
+
+        pauseMenuUI.SetActive(false);
+        Cursor.visible = false;
     }
 
     // Update is called once per frame
     void Update()
     {
         if (!IsOwner) return;
-        Move();
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+            return;
+        }
+
+        if (!isPaused)
+        {
+            Move();
+        }
     }
 
     void Move()
@@ -69,5 +85,25 @@ public class PlayerBehaviour : NetworkBehaviour
     {
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(groundPoint.position, groundRadius);
+    }
+
+    void TogglePause()
+    {
+        isPaused = true;
+
+        pauseMenuUI.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        cameraController.enabled = false;
+    }
+    public void ResumeGame()
+    {
+        isPaused = false;
+        cameraController.enabled = true;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 }

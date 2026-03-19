@@ -17,9 +17,14 @@ public class NetworkUI : MonoBehaviour
         NetworkManager.Singleton.StartClient();
     }
 
-    public void StartServer()
+    public void StartServer() // for testing
     {
         NetworkManager.Singleton.StartServer();
         NetworkManager.Singleton.SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 }
