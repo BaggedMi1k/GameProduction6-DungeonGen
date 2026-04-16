@@ -15,7 +15,9 @@ public class NetworkUI : MonoBehaviour
 
     private IEnumerator LoadSceneAfterFrame()
     {
-        yield return null;
+        yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
+
+        yield return null; // extra safety frame
 
         NetworkManager.Singleton.SceneManager.LoadScene(
             "GameScene",
