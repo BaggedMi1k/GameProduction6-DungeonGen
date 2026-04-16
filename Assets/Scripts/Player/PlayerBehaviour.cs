@@ -25,9 +25,12 @@ public class PlayerBehaviour : NetworkBehaviour
 
 
     // Start is called before the first frame update
-    void Start()
+    public override void OnNetworkSpawn()
     {
+        Debug.Log($"SPAWN | Owner={IsOwner} | LocalClient={NetworkManager.Singleton.LocalClientId} | OwnerClient={OwnerClientId}");
+
         controller = GetComponent<CharacterController>();
+
         if (!IsOwner)
         {
             playerCamera.enabled = false;
@@ -35,8 +38,8 @@ public class PlayerBehaviour : NetworkBehaviour
             return;
         }
 
-        pauseMenuUI.SetActive(false);
-        Cursor.visible = false;
+        playerCamera.enabled = true;
+        pickUpamera.enabled = true;
     }
 
     // Update is called once per frame

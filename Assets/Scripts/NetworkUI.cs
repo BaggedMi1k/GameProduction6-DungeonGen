@@ -9,7 +9,18 @@ public class NetworkUI : MonoBehaviour
     public void StartHost()
     {
         NetworkManager.Singleton.StartHost();
-        NetworkManager.Singleton.SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
+
+        StartCoroutine(LoadSceneAfterFrame());
+    }
+
+    private IEnumerator LoadSceneAfterFrame()
+    {
+        yield return null;
+
+        NetworkManager.Singleton.SceneManager.LoadScene(
+            "GameScene",
+            LoadSceneMode.Single
+        );
     }
 
     public void StartClient()
@@ -17,10 +28,9 @@ public class NetworkUI : MonoBehaviour
         NetworkManager.Singleton.StartClient();
     }
 
-    public void StartServer() // for testing
+    public void StartServer()
     {
         NetworkManager.Singleton.StartServer();
-        NetworkManager.Singleton.SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
     }
 
     public void QuitGame()
