@@ -21,7 +21,7 @@ public class PlayerBehaviour : NetworkBehaviour
 
     public CameraController cameraController;
     public GameObject pauseMenuUI;
-    private bool isPaused = false;
+    public bool isPaused = false;
 
 
     // Start is called before the first frame update

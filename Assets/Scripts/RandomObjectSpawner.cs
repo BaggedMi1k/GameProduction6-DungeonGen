@@ -1,37 +1,45 @@
-using System.Collections;
-using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class RandomObjectSpawner : MonoBehaviour
+public class RandomObjectSpawner : NetworkBehaviour
 {
-    public GameObject[] prefabs;
+    public NetworkObject[] prefabs;
 
     [Range(0f, 100f)]
-    public float spawnChance = 50f; // 1 in 2 chance
+    public float spawnChance = 50f;
 
     public bool spawnOnStart = true;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
-        if (spawnOnStart)
-        {
-            TrySpawn();
-        }
+        Debug.Log("Spawner spawned. IsServer = " + IsServer);
+        Debug.Log($"Spawner prefab count = {prefabs?.Length ?? -1}");
+
+        if (!IsServer)
+            return;
+
+        TrySpawn();
     }
 
     public void TrySpawn()
     {
-        // Roll chance
-        float roll = Random.value;
+        if (!IsServer) return;
 
-        if (roll <= spawnChance && prefabs.Length > 0)
+        if (prefabs.Length == 0)
         {
-            // Pick random prefab
-            int index = Random.Range(0, prefabs.Length);
-            GameObject prefabToSpawn = prefabs[index];
-
-            // Spawn at this spawner's position
-            Instantiate(prefabToSpawn, transform.position, transform.rotation);
+            Debug.LogError("No prefabs assigned!");
+            return;
         }
+
+        int index = Random.Range(0, prefabs.Length);
+
+        NetworkObject prefab = prefabs[index];
+
+        NetworkObject obj =
+            Instantiate(prefab, transform.position, transform.rotation);
+
+        obj.Spawn();
+
+        Debug.Log("Spawned: " + prefab.name);
     }
 }

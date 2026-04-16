@@ -41,8 +41,8 @@ public class Turret : MonoBehaviour
             Handles.color = Color.green;
             Handles.DrawWireArc(hardpoint.position, hardpoint.up, from, mountPoint.angleLimit, projection.magnitude);
             Handles.DrawSolidDisc(hardpoint.position + projection, hardpoint.up, .5f);
-#endif
         }
+#endif
     }
 
     Transform FindTarget()

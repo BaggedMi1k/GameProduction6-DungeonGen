@@ -19,17 +19,33 @@ public class PickUpScript : NetworkBehaviour
 
     private bool canDrop = true; //this is needed so we don't throw/drop object when rotating the object
     private int LayerNumber; //layer index
+    private PlayerBehaviour playerBehaviour;
 
     void Start()
     {
         LayerNumber = LayerMask.NameToLayer("holdLayer");
-
+        playerBehaviour = player.GetComponent<PlayerBehaviour>();
         //mouseLookScript = player.GetComponent<MouseLookScript>();
     }
     void Update()
     {
-        if (!IsOwner) return;
-        GrabObj();
+        if (!IsOwner)
+        {
+            Debug.Log("Not owner, skipping input");
+            return;
+        }
+
+        Debug.Log("IsOwner OK");
+
+        if (!playerBehaviour.isPaused)
+        {
+            Debug.Log("Calling GrabObj()");
+            GrabObj();
+        }
+        else
+        {
+            Debug.Log("Game is paused, cannot grab");
+        }
 
     }
 
@@ -43,12 +59,25 @@ public class PickUpScript : NetworkBehaviour
                 RaycastHit hit;
                 if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, pickUpRange))
                 {
-                    //make sure pickup tag is attached
-                    if (hit.transform.gameObject.tag == "canPickUp")
+                    Debug.Log("Raycast HIT: " + hit.transform.name);
+
+                    if (hit.transform.CompareTag("canPickUp"))
                     {
-                        //pass in object hit into the PickUpObject function
-                        PickUpObject(hit.transform.gameObject);
+                        Debug.Log("Object has canPickUp tag");
+                        NetworkObject netObj = hit.transform.GetComponentInParent<NetworkObject>();
+                        if (netObj != null)
+                        {
+                            RequestPickUpServerRpc(netObj.NetworkObjectId);
+                        }
                     }
+                    else
+                    {
+                        Debug.Log("Hit object but wrong tag: " + hit.transform.tag);
+                    }
+                }
+                else
+                {
+                    Debug.Log("Raycast missed");
                 }
             }
             else
@@ -56,7 +85,10 @@ public class PickUpScript : NetworkBehaviour
                 if (canDrop == true)
                 {
                     StopClipping(); //prevents object from clipping through walls
-                    DropObject();
+                    NetworkObject netObj = heldObj.GetComponent<NetworkObject>();
+                    DropObjectServerRpc(netObj.NetworkObjectId);
+                    heldObj = null;
+                    heldObjRb = null;
                 }
             }
         }
@@ -67,34 +99,16 @@ public class PickUpScript : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Mouse0) && canDrop == true) //Mous0 (leftclick) is used to throw, change this if you want another button to be used)
             {
                 StopClipping();
-                ThrowObject();
+                NetworkObject netObj = heldObj.GetComponent<NetworkObject>();
+                ThrowObjectServerRpc(netObj.NetworkObjectId, transform.forward);
+                heldObj = null;
+                heldObjRb = null;
             }
 
         }
     }
 
-    void PickUpObject(GameObject pickUpObj)
-    {
-        if (pickUpObj.GetComponent<Rigidbody>()) //make sure the object has a RigidBody
-        {
-            heldObj = pickUpObj; //assign heldObj to the object that was hit by the raycast (no longer == null)
-            heldObjRb = pickUpObj.GetComponent<Rigidbody>(); //assign Rigidbody
-            heldObjRb.isKinematic = true;
-            //heldObjRb.transform.parent = holdPos.transform; //parent object to holdposition
-            heldObj.layer = LayerNumber; //change the object layer to the holdLayer
-            //make sure object doesnt collide with player, it can cause weird bugs
-            Physics.IgnoreCollision(heldObj.GetComponent<Collider>(), player.GetComponent<Collider>(), true);
-        }
-    }
-    void DropObject()
-    {
-        //re-enable collision with player
-        Physics.IgnoreCollision(heldObj.GetComponent<Collider>(), player.GetComponent<Collider>(), false);
-        heldObj.layer = 0; //object assigned back to default layer
-        heldObjRb.isKinematic = false;
-        heldObj.transform.parent = null; //unparent object
-        heldObj = null; //undefine game object
-    }
+
     void MoveObject()
     {
         //keep object position the same as the holdPosition position
@@ -124,16 +138,7 @@ public class PickUpScript : NetworkBehaviour
             canDrop = true;
         }
     }
-    void ThrowObject()
-    {
-        //same as drop function, but add force to object before undefining it
-        Physics.IgnoreCollision(heldObj.GetComponent<Collider>(), player.GetComponent<Collider>(), false);
-        heldObj.layer = 0;
-        heldObjRb.isKinematic = false;
-        heldObj.transform.parent = null;
-        heldObjRb.AddForce(transform.forward * throwForce);
-        heldObj = null;
-    }
+
     void StopClipping() //function only called when dropping/throwing
     {
         var clipRange = Vector3.Distance(heldObj.transform.position, transform.position); //distance from holdPos to the camera
@@ -147,6 +152,97 @@ public class PickUpScript : NetworkBehaviour
             //change object position to camera position 
             heldObj.transform.position = transform.position + new Vector3(0f, -0.5f, 0f); //offset slightly downward to stop object dropping above player 
             //if your player is small, change the -0.5f to a smaller number (in magnitude) ie: -0.1f
+        }
+    }
+
+    [ServerRpc]
+    void RequestPickUpServerRpc(ulong objectId, ServerRpcParams rpcParams = default)
+    {
+        Debug.Log("ServerRpc: RequestPickUp received for object " + objectId);
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects
+            .TryGetValue(objectId, out NetworkObject netObj))
+        {
+            Rigidbody rb = netObj.GetComponent<Rigidbody>();
+
+            rb.isKinematic = true;
+
+            // Give ownership to the player picking it up
+            netObj.ChangeOwnership(rpcParams.Receive.SenderClientId);
+
+            AttachObjectClientRpc(objectId, rpcParams.Receive.SenderClientId);
+        }
+    }
+
+    [ClientRpc]
+    void AttachObjectClientRpc(ulong objectId, ulong playerId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects
+            .TryGetValue(objectId, out NetworkObject netObj))
+        {
+            // Only the player holding it should assign it locally
+            if (NetworkManager.Singleton.LocalClientId == playerId)
+            {
+                heldObj = netObj.gameObject;
+                heldObjRb = heldObj.GetComponent<Rigidbody>();
+
+                heldObj.layer = LayerNumber;
+
+                Physics.IgnoreCollision(
+                    heldObj.GetComponent<Collider>(),
+                    player.GetComponent<Collider>(),
+                    true
+                );
+            }
+        }
+    }
+
+    [ServerRpc]
+    void DropObjectServerRpc(ulong objectId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects
+            .TryGetValue(objectId, out NetworkObject netObj))
+        {
+            Rigidbody rb = netObj.GetComponent<Rigidbody>();
+
+            rb.isKinematic = false;
+
+            // Return ownership to server
+            netObj.RemoveOwnership();
+
+            ResetObjectClientRpc(objectId);
+        }
+    }
+
+    [ServerRpc]
+    void ThrowObjectServerRpc(ulong objectId, Vector3 forward)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects
+            .TryGetValue(objectId, out NetworkObject netObj))
+        {
+            Rigidbody rb = netObj.GetComponent<Rigidbody>();
+
+            rb.isKinematic = false;
+            rb.AddForce(forward * throwForce);
+
+            netObj.RemoveOwnership();
+
+            ResetObjectClientRpc(objectId);
+        }
+    }
+
+    [ClientRpc]
+    void ResetObjectClientRpc(ulong objectId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects
+            .TryGetValue(objectId, out NetworkObject netObj))
+        {
+            Physics.IgnoreCollision(
+                netObj.GetComponent<Collider>(),
+                player.GetComponent<Collider>(),
+                false
+            );
+
+            netObj.gameObject.layer = 0;
         }
     }
 }
