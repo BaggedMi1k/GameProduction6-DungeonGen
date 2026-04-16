@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class RandomObjectSpawner : NetworkBehaviour
 {
@@ -12,13 +14,29 @@ public class RandomObjectSpawner : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        Debug.Log("Spawner spawned. IsServer = " + IsServer);
-        Debug.Log($"Spawner prefab count = {prefabs?.Length ?? -1}");
-
         if (!IsServer)
             return;
 
+        NetworkManager.SceneManager.OnLoadEventCompleted += OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(string sceneName, LoadSceneMode mode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
         TrySpawn();
+
+        NetworkManager.SceneManager.OnLoadEventCompleted -= OnSceneLoaded;
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        // Only run when the first client joins (or adjust for multiplayer)
+        if (NetworkManager.ConnectedClients.Count >= 1)
+        {
+            TrySpawn();
+
+            // prevent multiple spawns
+            NetworkManager.OnClientConnectedCallback -= OnClientConnected;
+        }
     }
 
     public void TrySpawn()
